@@ -11,6 +11,8 @@
 
 **F4Wx** is a real weather tool for BMS 4.36+ that lets you download and convert real weather (GRIB2) into the simulator in a user-friendly way.
 
+This [oakdesign fork](https://github.com/oakdesign/f4wx) adds a visual editor for creating custom weather maps and editing existing maps or downloaded weather. The first editor release is **2.3.0-beta.1**, intended for testing with Falcon BMS 4.38. Report editor bugs in this fork's [issue tracker](https://github.com/oakdesign/f4wx/issues).
+
 For questions, bug reports, and feature suggestions, see the release thread on the BMS Community MODs/WIP forum.
 
 ---
@@ -41,11 +43,25 @@ See [f4wx/README.txt](src/f4wx/README.txt) for the full user guide, FAQ, and bug
 
 ---
 
+## Creating and editing weather
+
+Select the theater, then choose **New Weather**, **Open fmap**, or **Edit Current**.
+The editor works on one independent map; editing a downloaded frame leaves the real-weather forecast available in the main window.
+
+- **New** fills a map using the selected Sunny, Fair, Poor, or Inclement preset. Presets set weather type, clouds, visibility, and fog altitude while preserving temperature, pressure, and winds when painted.
+- Choose a paint field and value, then drag on the theater. Use radius **0** to change exactly one cell. Numeric fields support strength and soft edges; categories, density, and flags use replacement.
+- Choose **Rectangle** to fill a region, **Fill whole map** to apply the current field everywhere, or **Eyedropper** / right click to inspect a cell and pick its value.
+- Use the wheel to zoom and middle drag to pan. **Undo** and **Redo** operate on complete strokes, fills, and map-wide changes.
+- Wind painting affects the selected altitude only. Stratus heights, contrail heights, and map wind are separate map-wide settings. Map wind stays manual unless **Derive map wind from 12000 ft** is used.
+- **Save As** exports a version-8 `.fmap`. Load it manually in BMS from the campaign directory. The editor prompts before discarding changed maps.
+
+Imported maps must use version 8 and match the selected theater's grid dimensions. An fmap contains no theater identity, so select the correct theater yourself. The editor validates weather values using the ranges displayed in its controls. Sequence editing is not included.
+
 ## Building from source
 
 1. Clone the repository (including submodules):
    ```bash
-   git clone --recurse-submodules https://github.com/syn111/f4wx
+   git clone --recurse-submodules https://github.com/oakdesign/f4wx
    ```
    If you already cloned without submodules, run:
    ```bash
@@ -59,6 +75,8 @@ The solution also includes:
 - **g2c** – NCEPLIBS-g2c static library for GRIB2 decode (built automatically as a dependency of f4wx).
 
 Dependencies (g2c) are Git submodules in `dependencies/`. GRIB2 support is provided by [NCEPLIBS-g2c](https://github.com/NOAA-EMC/NCEPLIBS-g2c) (built as a static lib with PNG/Jasper disabled for a single portable .exe).
+
+Run `./tests/run_weather_tests.ps1` from PowerShell to compile and run the weather editor data tests (debug and release), Win32 control tests, and a canvas render check. Pass `-VisualStudioPath` to choose a compiler installation explicitly. Test artifacts are written to `obj/editor-tests`.
 
 ---
 

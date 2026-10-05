@@ -19,7 +19,7 @@
 
 #include <Windows.h>
 #include <filesystem>
-#include <gdiplus.h>
+#include "gdiplus_support.h"
 #include <memory>
 
 #include "fmap.h"

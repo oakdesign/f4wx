@@ -22,7 +22,7 @@
 #include <Windows.h>
 #include <objidl.h>
 #include <wrl/client.h>
-#include <gdiplus.h>
+#include "gdiplus_support.h"
 #include <Commctrl.h>
 #include <filesystem>
 #include <memory>

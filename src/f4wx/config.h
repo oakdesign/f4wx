@@ -24,10 +24,10 @@
 #define F4WX_ENABLE_UPDATE_CHECK
 
 // GitHub API: latest release (one request, one release; 403/404 → fail silently, user gets notification later).
-inline constexpr char F4WX_RELEASES_API_LATEST_URL[] = "https://api.github.com/repos/syn111/f4wx/releases/latest";
+inline constexpr char F4WX_RELEASES_API_LATEST_URL[] = "https://api.github.com/repos/oakdesign/f4wx/releases/latest";
 
 // URL of the latest release
-inline constexpr char F4WX_RELEASES_URL[] = "https://github.com/syn111/f4wx/releases/latest";
+inline constexpr char F4WX_RELEASES_URL[] = "https://github.com/oakdesign/f4wx/releases/latest";
 
 // Print additional debug information on preview window
 #define FMAP_DEBUG

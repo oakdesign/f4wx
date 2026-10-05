@@ -26,7 +26,7 @@
 #include "config.h"
 
 #include <Windows.h>
-#include <gdiplus.h>
+#include "gdiplus_support.h"
 #include <memory>
 #include <vector>
 #include <string_view>
@@ -36,6 +36,7 @@
 
 #include <filesystem>
 #include <thread>
+#include <atomic>
 #include <stop_token>
 #include <condition_variable>
 #include <queue>
@@ -294,6 +295,7 @@ private:
 	std::queue<std::function<void()>> m_tasks;
 	std::mutex m_queue_mutex;
 	std::condition_variable_any m_queue_cv;
+	std::atomic<bool> m_worker_finished{true};
 	std::jthread m_worker;
 	/** Set by worker before running a task, cleared after; allows long-running tasks to check stop. */
 	std::stop_token m_worker_stop_token;
@@ -376,6 +378,7 @@ private:
 	};
 
 #ifdef F4WX_ENABLE_UPDATE_CHECK
+	std::atomic<bool> m_update_finished{true};
 	std::jthread m_update_thread;
 	void check_for_updates(bool in_background);
 	void do_update_check(bool in_background);

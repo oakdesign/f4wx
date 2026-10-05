@@ -16,7 +16,7 @@
 */
 
 #include <Windows.h>
-#include <gdiplus.h>
+#include "gdiplus_support.h"
 #include <Windowsx.h>
 #include <algorithm>
 #include <memory>
@@ -46,6 +46,7 @@
 #include "utils.h"
 #include "resource.h"
 #include "f4wx_update_notifier.h"
+#include "f4wx_editor.h"
 
 #include <Shobjidl.h>
 
@@ -73,6 +74,27 @@ using std::vector;
 using std::string;
 
 using namespace Gdiplus;
+
+namespace {
+	struct thread_completion {
+		std::atomic<bool>& finished;
+		~thread_completion() { finished.store(true); }
+	};
+	// Pump messages while a worker finishes: it may be waiting in SendMessage.
+	// Explicit completion works even on C++20 libraries without jthread::native_handle.
+	void stop_and_join(std::jthread& thread, const std::atomic<bool>& finished) {
+		thread.request_stop();
+		if (!thread.joinable()) return;
+		while (!finished.load()) {
+			MSG msg;
+			while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+				if (msg.message != WM_QUIT) DispatchMessage(&msg);
+			}
+			Sleep(5);
+		}
+		thread.join();
+	}
+}
 
 /** Number of fmap grid cells for a theater size in segments (64 or 128). 1 segment = 16 nm for formula. */
 inline unsigned int fmap_cells_from_size(double s)
@@ -135,7 +157,9 @@ f4wx::f4wx()
 	m_previewHookOrigProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_previewWindow.get_hwnd(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(previewHook)));
 	SetProp(m_previewWindow.get_hwnd(), L"f4wx", this);
 
+	m_worker_finished.store(false);
 	m_worker = std::jthread([this](std::stop_token stoken) {
+		thread_completion completion{m_worker_finished};
 		while (true) {
 			std::function<void()> task;
 			{
@@ -165,30 +189,10 @@ f4wx::~f4wx()
 {
 	// Avoid deadlock: worker may be blocked in SendMessage(WMU_OPENPB_THREAD/...) waiting for
 	// this thread. Request stop and pump messages until the worker exits so its SendMessage is processed.
-	m_worker.request_stop();
-	if (void* h = m_worker.native_handle()) {
-		while (WaitForSingleObject(static_cast<HANDLE>(h), 0) == WAIT_TIMEOUT) {
-			MSG msg;
-			while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-				if (msg.message != WM_QUIT)
-					DispatchMessage(&msg);
-			}
-			Sleep(5);
-		}
-	}
+	stop_and_join(m_worker, m_worker_finished);
 	m_worker = std::jthread();
 #ifdef F4WX_ENABLE_UPDATE_CHECK
-	m_update_thread.request_stop();
-	if (void* uh = m_update_thread.native_handle()) {
-		while (WaitForSingleObject(static_cast<HANDLE>(uh), 0) == WAIT_TIMEOUT) {
-			MSG msg;
-			while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-				if (msg.message != WM_QUIT)
-					DispatchMessage(&msg);
-			}
-			Sleep(5);
-		}
-	}
+	stop_and_join(m_update_thread, m_update_finished);
 	m_update_thread = std::jthread();
 #endif
 	clear_gribfiles();
@@ -730,6 +734,21 @@ void f4wx::show_warning(int id, bool show)
 INT_PTR f4wx::on_command(WPARAM wparam, LPARAM lparam)
 {
 	switch (LOWORD(wparam)) {
+		case IDC_F4WX_MAIN_NEW_MAP:
+		case IDC_F4WX_MAIN_OPEN_MAP:
+		case IDC_F4WX_MAIN_EDIT_MAP: {
+			if (!isidle()) break;
+			if (LOWORD(wparam) == IDC_F4WX_MAIN_EDIT_MAP && !m_current_map) {
+				infobox("Load or download weather first, or use New Weather / Open fmap.");
+				break;
+			}
+			do_play(false);
+			editor_start start = LOWORD(wparam) == IDC_F4WX_MAIN_NEW_MAP ? editor_start::new_map :
+				LOWORD(wparam) == IDC_F4WX_MAIN_OPEN_MAP ? editor_start::open_map : editor_start::current_map;
+			show_weather_editor(m_hwnd, m_current_theater.name, fmap_cells_from_size(m_current_theater.size),
+				fmap_cells_from_size(m_current_theater.size), m_previewWindow.get_background(), m_current_map.get(), start);
+			break;
+		}
 		case IDC_F4WX_MAIN_SAVE_SINGLE:
 			set_save_mode(ui_save_mode::single);
 			break;
@@ -2343,7 +2362,12 @@ void f4wx::on_play_timer()
 
 void f4wx::check_for_updates(bool in_background)
 {
-	m_update_thread = std::jthread(&f4wx::do_update_check, this, in_background);
+	stop_and_join(m_update_thread, m_update_finished);
+	m_update_finished.store(false);
+	m_update_thread = std::jthread([this, in_background] {
+		thread_completion completion{m_update_finished};
+		do_update_check(in_background);
+	});
 }
 
 void f4wx::do_update_check(bool in_background)

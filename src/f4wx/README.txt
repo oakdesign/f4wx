@@ -1,4 +1,4 @@
-F4Wx v2.2.1
+F4Wx v2.3.0-beta.1 (oakdesign fork)
 ===========
 
 
@@ -12,6 +12,24 @@ F4Wx v2.2.1
 
 
 
+
+CUSTOM WEATHER EDITOR (BETA)
+----------------------------
+
+Select a theater and choose New Weather, Open fmap, or Edit Current.
+Edit Current copies one downloaded frame into an independent editor document.
+Choose a field or preset, then paint with the left mouse button. Radius 0 edits
+one cell. Numeric fields support strength and soft edges. Rectangle and Fill
+whole map apply the selected field to a region or the entire map. Right click
+inspects a cell and picks its value. Use the wheel to zoom and middle drag to pan.
+Undo/Redo operate on strokes, fills, and map-wide changes. Map wind, stratus, and
+contrail settings are edited separately. Save As exports a version-8 fmap for
+manual loading from the BMS campaign directory.
+
+Only single-frame editing is supported. Select the correct theater before
+opening an fmap; its dimensions must match. Custom exports need testing in BMS
+4.38. For full controls, read README.md. Report beta issues at:
+https://github.com/oakdesign/f4wx/issues
 CONTENTS OF THIS FILE
 ---------------------
    

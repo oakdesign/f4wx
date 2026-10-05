@@ -166,6 +166,11 @@
 #define IDM_F4WX_PREVIEW_MENU_SAVE              4001
 #define IDM_F4WX_PREVIEW_MENU_LOAD              4002
 
+#define IDD_F4WX_EDITOR                         1600
+#define IDC_F4WX_MAIN_NEW_MAP                   1601
+#define IDC_F4WX_MAIN_OPEN_MAP                  1602
+#define IDC_F4WX_MAIN_EDIT_MAP                  1603
+
 /////////////////////////////////////////////////////////////////////////////
 // APSTUDIO next-value hints (do not assign IDs in these ranges manually)
 /////////////////////////////////////////////////////////////////////////////

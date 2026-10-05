@@ -18,7 +18,7 @@
 #pragma once
 
 #include <Windows.h>
-#include <gdiplus.h>
+#include "gdiplus_support.h"
 
 #include <algorithm>
 #include <iterator>
@@ -480,8 +480,11 @@ void f4wx_preview::draw_wind(const fmap& map, size_t level)
 {
 	float lineSize = m_bitmap->GetWidth() / 40.0f;
 
-	for (unsigned int y = 0; y < map.get_sizeY(); y += (30 * map.get_sizeY()) / m_bitmap->GetHeight()) {
-		for (unsigned int x = 1; x < map.get_sizeX(); x += (30 * map.get_sizeX()) / m_bitmap->GetWidth()) {
+	// Small imported maps and large backgrounds must still advance at least one cell.
+	const unsigned stepY = std::max(1u, (30 * map.get_sizeY()) / m_bitmap->GetHeight());
+	const unsigned stepX = std::max(1u, (30 * map.get_sizeX()) / m_bitmap->GetWidth());
+	for (unsigned int y = 0; y < map.get_sizeY(); y += stepY) {
+		for (unsigned int x = 1; x < map.get_sizeX(); x += stepX) {
 			float px = static_cast<float>((x * m_bitmap->GetWidth()) / map.get_sizeX()) + lineSize/2.0f;
 			float py = static_cast<float>((y * m_bitmap->GetHeight()) / map.get_sizeY()) + lineSize;
 			assert(level < NUM_ALOFT_BREAKPOINTS);

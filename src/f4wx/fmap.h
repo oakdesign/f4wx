@@ -34,6 +34,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cmath>
 
 /** Weather condition band used for thresholds and BMS output. */
 enum fmap_wxtype
@@ -74,6 +75,34 @@ inline constexpr std::size_t NUM_ALOFT_BREAKPOINTS = std::size(fmap_aloft_breakp
 /** Single time-step weather grid for BMS: cells + map-level fields; supports save(). */
 class fmap {
 public:
+	/** Serializable weather values; GRIB diagnostics are deliberately excluded. */
+	struct cell_data {
+		int basicCondition = WX_SUNNY;
+		float pressure = 1013.25f;
+		float temperature = 15.0f;
+		float windSpeed[NUM_ALOFT_BREAKPOINTS] = {};
+		float windDir[NUM_ALOFT_BREAKPOINTS] = {};
+		float cumulusBase = 0;
+		int cumulusDensity = 0;
+		float cumulusSize = 0;
+		int hasTowerCumulus = 0;
+		int hasShowerCumulus = 0;
+		float fogEndBelowLayerMapData = 60;
+		float fogLayerZ = 10000;
+		bool operator==(const cell_data&) const = default;
+	};
+	cell_data get_cell(cell_index c) const { return m_cells.at(_index(c)); }
+	void set_cell(cell_index c, const cell_data& data) {
+		static_cast<cell_data&>(m_cells.at(_index(c))) = data;
+#ifdef FMAP_DEBUG
+		m_cells.at(_index(c)).debugData.reset();
+#endif
+	}
+	std::unique_ptr<fmap> clone() const;
+	static std::unique_ptr<fmap> load(const std::filesystem::path& path, std::string& error);
+	bool validate(std::string& error) const;
+	/** Transactional editor export: existing destination survives failed writes. */
+	bool save_atomic(const std::filesystem::path& path, std::string& error) const;
 	/** @param sizeY Number of rows (BMS TheaterYCells). @param sizeX Number of columns (BMS TheaterXCells). */
 	fmap(unsigned int sizeY, unsigned int sizeX)
 		: m_sizeY(sizeY), m_sizeX(sizeX), m_cells(static_cast<size_t>(sizeY) * sizeX)
@@ -191,7 +220,10 @@ public:
 					return false;
 			}
 
-		return true;
+		out.flush();
+		bool ok = static_cast<bool>(out);
+		out.close();
+		return ok && !out.fail();
 	}
 
 
@@ -291,19 +323,7 @@ protected:
 
 	// Per-cell fields
 
-	struct fmap_cell {
-		int basicCondition = WX_SUNNY;
-		float pressure = 1013.25f;
-		float temperature = 15.0f;
-		float windSpeed[NUM_ALOFT_BREAKPOINTS] = { 0.0f };
-		float windDir[NUM_ALOFT_BREAKPOINTS] = { 0.0f };
-		float cumulusBase = 0.0f;
-		int cumulusDensity = 0;
-		float cumulusSize = 0.0f;
-		int hasTowerCumulus = 0;
-		int hasShowerCumulus = 0;
-		float fogEndBelowLayerMapData = 60.0f;
-		float fogLayerZ = 10000.0f;
+	struct fmap_cell : cell_data {
 
 #ifdef FMAP_DEBUG
 		std::unique_ptr<debug_data> debugData;
