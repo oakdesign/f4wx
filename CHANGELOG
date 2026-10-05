@@ -5,6 +5,7 @@ v2.3.0-beta.1 (05-OCT-2026) - oakdesign fork
  * Added map-wide weather controls and validated transactional fmap export
  * Fixed editor redraw flicker through double buffering and wind-preview hangs on small maps
  * Made thread shutdown portable to the VS2019 C++20 library
+ * Fixed the application exit code on normal shutdown
  * Added debug/release data tests and Win32 editor regression tests
  * Beta: in-simulator BMS 4.38 validation remains outstanding; sequence editing is not included
 

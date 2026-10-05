@@ -78,6 +78,8 @@ Dependencies (g2c) are Git submodules in `dependencies/`. GRIB2 support is provi
 
 Run `./tests/run_weather_tests.ps1` from PowerShell to compile and run the weather editor data tests (debug and release), Win32 control tests, and a canvas render check. Pass `-VisualStudioPath` to choose a compiler installation explicitly. Test artifacts are written to `obj/editor-tests`.
 
+After building Release, run `./tests/release_smoke_test.ps1` to check the beta's startup, New Weather action, and normal shutdown. Use `-ExecutablePath` and `-ExpectedVersion` for another build.
+
 ---
 
 ## License

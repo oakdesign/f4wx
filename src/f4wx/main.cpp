@@ -30,7 +30,7 @@ int CALLBACK WinMain(
 )
 {
 	f4wx wx;
-	(void)wx.run_ui();
+	return wx.run_ui();
 }
 
 
